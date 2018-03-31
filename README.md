@@ -4,11 +4,9 @@
 [![Gem Version](https://badge.fury.io/rb/pause.svg)](https://badge.fury.io/rb/pause.svg)
 [![Maintainability](https://api.codeclimate.com/v1/badges/af443a25cc902e629c8f/maintainability)](https://codeclimate.com/github/kigster/pause/maintainability)
 
-
 # Pause
 
 ## In a Nutshell
-
 
 **Pause** is a fast and very flexible Redis-backed rate-limiter. You can use it to track events, with
 rules around how often they are allowed to occur within configured time checks.
