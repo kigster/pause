@@ -4,6 +4,7 @@
 [![Gem Version](https://badge.fury.io/rb/pause.svg)](https://badge.fury.io/rb/pause.svg)
 [![Maintainability](https://api.codeclimate.com/v1/badges/af443a25cc902e629c8f/maintainability)](https://codeclimate.com/github/kigster/pause/maintainability)
 
+
 # Pause
 
 ## In a Nutshell
