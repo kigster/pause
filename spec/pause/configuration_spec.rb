@@ -1,10 +1,11 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 describe Pause::Configuration, '#configure' do
+  subject { described_class.new }
 
-  subject { Pause::Configuration.new }
-
-  it 'should allow configuration via block' do
+  it 'allows configuration via block' do
     subject.configure do |c|
       c.redis_host = '128.23.12.8'
       c.redis_port = '2134'
@@ -24,7 +25,7 @@ describe Pause::Configuration, '#configure' do
     expect(subject.sharded).to be true
   end
 
-  it 'should provide redis defaults' do
+  it 'provides redis defaults' do
     subject.configure do |config|
       # do nothing
     end
@@ -33,7 +34,7 @@ describe Pause::Configuration, '#configure' do
     expect(subject.redis_port).to eq(6379)
     expect(subject.redis_db).to eq('1')
     expect(subject.resolution).to eq(600) # 10 minutes
-    expect(subject.history).to eq(86400) # one day
+    expect(subject.history).to eq(86_400) # one day
     expect(subject.sharded).to be false
   end
 end

@@ -1,10 +1,12 @@
-[![Build Status](https://travis-ci.org/kigster/pause.svg?branch=master)](https://travis-ci.org/kigster/pause)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/af443a25cc902e629c8f/test_coverage)](https://codeclimate.com/github/kigster/pause/test_coverage)
 
-[![Gem Version](https://badge.fury.io/rb/pause.svg)](https://badge.fury.io/rb/pause.svg)
-[![Maintainability](https://api.codeclimate.com/v1/badges/af443a25cc902e629c8f/maintainability)](https://codeclimate.com/github/kigster/pause/maintainability)
-![Downloads](
-https://img.shields.io/gem/dt/pause.svg)
+[![RSpec](https://github.com/kigster/pause/actions/workflows/rspec.yml/badge.svg?style=for-the-badge)](https://github.com/kigster/pause/actions/workflows/rspec.yml)
+[![Rubocop](https://github.com/kigster/pause/actions/workflows/rubocop.yml/badge.svg?style=for-the-badge)](https://github.com/kigster/pause/actions/workflows/rubocop.yml)
+
+[![Gem Version](https://badge.fury.io/rb/pause@2x.png?icon=si%3Arubygems)](https://badge.fury.io/rb/pause)
+
+[![Downloads](https://img.shields.io/gem/dt/pause.svg?style=for-the-badge&color=0AF)](https://rubygems.org/gems/pause)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&color=0AF)](https://opensource.org/licenses/MIT)
+
 # Pause
 
 ## In a Nutshell
@@ -53,7 +55,6 @@ Pause.configure do |config|
   config.redis_host = '127.0.0.1'
   config.redis_port = 6379
   config.redis_db   = 1
-  
   config.resolution = 600     
   config.history    = 7 * 86400  # discard events older than 7 days   
 end
@@ -79,15 +80,15 @@ module MyApp
     # this is a redis key namespace added to all data in this action
     scope 'un'  
     
-    check period_seconds:      120, 
-          max_allowed:           1, 
-          block_ttl:           240
+    check period_seconds: 120, 
+          max_allowed: 1, 
+          block_ttl: 240
           
-    check period_seconds:    86400, 
-          max_allowed:           3
+    check period_seconds: 86400, 
+          max_allowed: 3
           
-    check period_seconds: 7 *86400, 
-          max_allowed:           7
+    check period_seconds: 7 * 86400, 
+          max_allowed: 7
   end
 end
 ```
@@ -105,7 +106,7 @@ class NotificationsWorker
       unless_rate_limited do
         # this block ONLY runs if rate limit is not reached
         user = User.find(user_id) 
-        user.send_push_notification!
+        PushNotifications.new(user).send_push_notification!
       end
       
       if_rate_limited do |rate_limit_event|
@@ -320,9 +321,7 @@ Pause.configure do |config|
 end
 ```
 
-With this configuration, any Pause operation that we know is not supported by Twemproxy will raise
-`Pause::Redis::OperationNotSupported`. For instance, when sharding we are unable to get a list of all
-tracked identifiers.
+With this configuration, any Pause operation that we know is not supported by Twemproxy will raise `Pause::Redis::OperationNotSupported`. For instance, when sharding we are unable to get a list of all tracked identifiers.
 
 The action block list is implemented as a sorted set, so it should still be usable when sharding.
 

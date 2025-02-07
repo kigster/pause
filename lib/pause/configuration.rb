@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Pause
   class Configuration
     attr_writer :redis_host, :redis_port, :redis_db, :resolution, :history, :sharded
@@ -24,7 +26,7 @@ module Pause
     end
 
     def history
-      (@history || 86400).to_i
+      (@history || 86_400).to_i
     end
 
     def sharded

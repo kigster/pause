@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require 'bundler/gem_tasks'
 require 'rspec/core/rake_task'
 require 'yard'
 
 RSpec::Core::RakeTask.new(:spec)
 
-task :default => %w(spec:unit spec:integration)
+task default: %w[spec:unit spec:integration]
 
 namespace :spec do
   desc 'Run specs using fakeredis'
@@ -25,23 +27,22 @@ def shell(*args)
 end
 
 task :clean do
-  shell('rm -rf pkg/ tmp/ coverage/ doc/ ' )
+  shell('rm -rf pkg/ tmp/ coverage/ doc/ ')
 end
 
-task :gem => [:build] do
+task gem: [:build] do
   shell('gem install pkg/*')
 end
 
-task :permissions => [ :clean ] do
+task permissions: [:clean] do
   shell('chmod -v o+r,g+r * */* */*/* */*/*/* */*/*/*/* */*/*/*/*/*')
-  shell("find . -type d -exec chmod o+x,g+x {} \\;")
+  shell('find . -type d -exec chmod o+x,g+x {} \\;')
 end
 
-task :build => :permissions
+task build: :permissions
 
 YARD::Rake::YardocTask.new(:doc) do |t|
-  t.files = %w(lib/**/*.rb exe/*.rb - README.md LICENSE.txt)
-  t.options.unshift('--title','"Pause - Redis-backed Rate Limiter"')
-  t.after = ->() { exec('open doc/index.html') }
+  t.files = %w[lib/**/*.rb exe/*.rb - README.md LICENSE.txt]
+  t.options.unshift('--title', '"Pause - Redis-backed Rate Limiter"')
+  t.after = -> { exec('open doc/index.html') }
 end
-

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 
 RSpec.describe Pause do
@@ -5,8 +7,8 @@ RSpec.describe Pause do
     let(:configuration) { Pause::Configuration.new }
 
     before do
-      Pause.adapter = nil
-      allow(Pause).to receive(:config).and_return(configuration)
+      described_class.adapter = nil
+      allow(described_class).to receive(:config).and_return(configuration)
       configuration.configure { |c| c.sharded = sharded }
     end
 
@@ -14,7 +16,7 @@ RSpec.describe Pause do
       let(:sharded) { true }
 
       it 'is a ShardedAdapter' do
-        expect(Pause.adapter).to be_a(Pause::Redis::ShardedAdapter)
+        expect(described_class.adapter).to be_a(Pause::Redis::ShardedAdapter)
       end
     end
 
@@ -22,7 +24,7 @@ RSpec.describe Pause do
       let(:sharded) { false }
 
       it 'is an Adapter' do
-        expect(Pause.adapter).to be_a(Pause::Redis::Adapter)
+        expect(described_class.adapter).to be_a(Pause::Redis::Adapter)
       end
     end
   end
