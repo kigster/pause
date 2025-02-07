@@ -35,10 +35,7 @@ describe Pause::Redis::Adapter do
       let(:time) { Time.now }
 
       before do
-        adapter
-        to_delete.times do |t|
-          expect(redis_conn).to receive(:zrem).with(tracked_key, [adapter.period_marker(resolution, time + t)]).once
-        end
+        expect(redis_conn).to receive(:zrem).with(tracked_key, [adapter.period_marker(resolution, time)]).exactly(to_delete).times
         adapter.time_blocks_to_keep = 1
       end
 
