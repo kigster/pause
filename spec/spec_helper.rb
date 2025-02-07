@@ -23,9 +23,6 @@ else
 end
 
 RSpec.configure do |config|
-  config.run_all_when_everything_filtered = true
-  config.filter_run :focus
-
   rspec_dir = './.spec'
   FileUtils.mkdir_p(rspec_dir)
   config.example_status_persistence_file_path = "#{rspec_dir}/results.txt"

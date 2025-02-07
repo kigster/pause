@@ -2,7 +2,8 @@
 [![RSpec](https://github.com/kigster/pause/actions/workflows/rspec.yml/badge.svg?style=for-the-badge)](https://github.com/kigster/pause/actions/workflows/rspec.yml)
 [![Rubocop](https://github.com/kigster/pause/actions/workflows/rubocop.yml/badge.svg?style=for-the-badge)](https://github.com/kigster/pause/actions/workflows/rubocop.yml)
 
-[![Gem Version](https://badge.fury.io/rb/pause.svg?style=for-the-badge&color=0AF)](https://badge.fury.io/rb/pause.svg)
+[![Gem Version](https://badge.fury.io/rb/pause@2x.png?icon=si%3Arubygems)](https://badge.fury.io/rb/pause)
+
 [![Downloads](https://img.shields.io/gem/dt/pause.svg?style=for-the-badge&color=0AF)](https://rubygems.org/gems/pause)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&color=0AF)](https://opensource.org/licenses/MIT)
 

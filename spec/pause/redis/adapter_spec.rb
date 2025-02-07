@@ -20,7 +20,8 @@ describe Pause::Redis::Adapter do
   describe '#increment' do
     let(:scope) { 'blah' }
     let(:identifier) { '213213' }
-    let(:tracked_key) { 'i:blah:|213213|' }
+    let(:tracked_key) { "i:#{scope}:|#{identifier}|" }
+    let(:now) { Time.now.to_i }
 
     it 'adds key to a redis set' do
       adapter.increment(scope, identifier, Time.now.to_i)
@@ -30,27 +31,51 @@ describe Pause::Redis::Adapter do
       expect(set[0].size).to be(2)
     end
 
-    context 'removing two elements' do
-      let(:to_delete) { 2 }
-      let(:time) { Time.now }
+    describe 'when increment is called' do
+      let(:redis_conn_double) { instance_double(Redis) }
 
       before do
-        expect(redis_conn).to receive(:zrem).with(tracked_key, [adapter.period_marker(resolution, time)]).exactly(to_delete).times
-        adapter.time_blocks_to_keep = 1
+        allow(adapter).to receive(:with_multi).and_yield(redis_conn_double)
       end
 
-      it 'removes old elements' do
-        adapter.increment(scope, identifier, time.to_i)
-        to_delete.times do |t|
-          next_time = time + (adapter.resolution + t + 1)
-          adapter.increment(scope, identifier, next_time.to_i)
-        end
+      it 'calls zincrby on the redis connection' do
+        allow(redis_conn_double).to receive(:expire)
+        expect(redis_conn_double).to receive(:zincrby)
+
+        adapter.increment(scope, identifier, Time.now.to_i)
+      end
+
+      it 'calls expire on the redis key' do
+        expect(redis_conn_double).to receive(:expire).with(tracked_key, history)
+        allow(redis_conn_double).to receive(:zincrby)
+
+        adapter.increment(scope, identifier, Time.now.to_i)
       end
     end
 
-    xit 'sets expiry on key' do
-      expect(redis_conn).to receive(:expire) # .with(tracked_key, history)
-      adapter.increment(scope, identifier, Time.now.to_i)
+    context 'removing two elements' do
+      let(:to_delete) { 2 }
+      let(:period_start) { adapter.period_marker(resolution, now) }
+      let(:period_end) { adapter.period_marker(resolution, now + resolution) }
+
+      around do |example|
+        Timecop.freeze(now) { example.run }
+      end
+
+      before do
+        redis_conn.flushall
+        adapter.time_blocks_to_keep = 1
+        allow(redis_conn).to receive(:zrem).with(tracked_key, [period_start])
+        allow(redis_conn).to receive(:zrem).with(tracked_key, [period_start, period_end])
+      end
+
+      it 'removes old elements' do
+        adapter.increment(scope, identifier, now.to_i)
+        to_delete.times do |t|
+          next_time = now + (adapter.resolution + t + 1)
+          adapter.increment(scope, identifier, next_time.to_i)
+        end
+      end
     end
   end
 
