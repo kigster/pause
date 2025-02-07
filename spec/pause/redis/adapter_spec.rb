@@ -1,39 +1,39 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'date'
 require 'timecop'
 
 describe Pause::Redis::Adapter do
-
   let(:resolution) { 10 }
+  let(:adapter) { described_class.new(Pause.config) }
+  let(:redis_conn) { adapter.send(:redis) }
   let(:history) { 60 }
   let(:configuration) { Pause::Configuration.new }
 
   before do
     allow(Pause).to receive(:config).and_return(configuration)
-    allow(Pause.config).to receive(:resolution).and_return(resolution)
-    allow(Pause.config).to receive(:history).and_return(history)
+    allow(Pause.config).to receive_messages(resolution: resolution, history: history)
     redis_conn.flushall
   end
-
-  let(:adapter) { Pause::Redis::Adapter.new(Pause.config) }
-  let(:redis_conn) { adapter.send(:redis) }
 
   describe '#increment' do
     let(:scope) { 'blah' }
     let(:identifier) { '213213' }
     let(:tracked_key) { 'i:blah:|213213|' }
 
-    it 'should add key to a redis set' do
+    it 'adds key to a redis set' do
       adapter.increment(scope, identifier, Time.now.to_i)
-      set = redis_conn.zrange(tracked_key, 0, -1, :with_scores => true)
-      expect(set).to_not be_empty
-      expect(set.size).to eql(1)
-      expect(set[0].size).to eql(2)
+      set = redis_conn.zrange(tracked_key, 0, -1, with_scores: true)
+      expect(set).not_to be_empty
+      expect(set.size).to be(1)
+      expect(set[0].size).to be(2)
     end
 
     context 'removing two elements' do
       let(:to_delete) { 2 }
       let(:time) { Time.now }
+
       before do
         adapter
         to_delete.times do |t|
@@ -41,7 +41,8 @@ describe Pause::Redis::Adapter do
         end
         adapter.time_blocks_to_keep = 1
       end
-      it 'should remove old elements' do
+
+      it 'removes old elements' do
         adapter.increment(scope, identifier, time.to_i)
         to_delete.times do |t|
           next_time = time + (adapter.resolution + t + 1)
@@ -51,7 +52,7 @@ describe Pause::Redis::Adapter do
     end
 
     xit 'sets expiry on key' do
-      expect(redis_conn).to receive(:expire)# .with(tracked_key, history)
+      expect(redis_conn).to receive(:expire) # .with(tracked_key, history)
       adapter.increment(scope, identifier, Time.now.to_i)
     end
   end
@@ -74,21 +75,18 @@ describe Pause::Redis::Adapter do
 
       adapter.expire_block_list(scope)
 
-      expect(redis_conn.zscore('b:|a|', blocked_identifier)).not_to be nil
-      expect(redis_conn.zscore('b:|a|', expired_identifier)).to be nil
+      expect(redis_conn.zscore('b:|a|', blocked_identifier)).not_to be_nil
+      expect(redis_conn.zscore('b:|a|', expired_identifier)).to be_nil
     end
-  end
-
-  describe '#rate_limit!' do
   end
 
   describe '#rate_limited?' do
     let(:scope) { 'ipn:follow' }
     let(:identifier) { '123461234' }
     let(:blocked_key) { "b:#{key}" }
-    let(:ttl) { 110000 }
+    let(:ttl) { 110_000 }
 
-    it 'should return true if blocked' do
+    it 'returns true if blocked' do
       adapter.rate_limit!(scope, identifier, ttl)
       expect(adapter.rate_limited?(scope, identifier)).to be true
     end
@@ -128,17 +126,16 @@ describe Pause::Redis::Adapter do
       let(:scope) { 'ipn:follow' }
       let(:identifier) { '1234' }
       let(:blocked_key) { "b:|#{scope}|" }
-      let(:ttl) { 110000 }
+      let(:ttl) { 110_000 }
 
       it 'saves ip to redis with expiration' do
         time = Time.now
         Timecop.freeze time do
           adapter.rate_limit!(scope, identifier, ttl)
         end
-        expect(redis_conn.zscore(blocked_key, identifier)).to_not be nil
+        expect(redis_conn.zscore(blocked_key, identifier)).not_to be_nil
         expect(redis_conn.zscore(blocked_key, identifier)).to eq(time.to_i + ttl)
       end
-
     end
   end
 

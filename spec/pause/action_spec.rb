@@ -11,6 +11,10 @@ describe Pause::Action do
   end
 
   let(:resolution) { 10 }
+  let(:identifier) { '11112222' }
+  let(:action) { MyNotification.new(identifier) }
+  let(:other_identifier) { '8798734' }
+  let(:other_action) { MyNotification.new(other_identifier) }
   let(:history) { 60 }
   let(:configuration) { Pause::Configuration.new }
   let(:adapter) { Pause::Redis::Adapter.new(Pause.config) }
@@ -22,15 +26,9 @@ describe Pause::Action do
     allow(Pause).to receive(:adapter).and_return(adapter)
   end
 
-  let(:identifier) { '11112222' }
-  let(:action) { MyNotification.new(identifier) }
-
-  let(:other_identifier) { '8798734' }
-  let(:other_action) { MyNotification.new(other_identifier) }
-
   RSpec.shared_examples 'an action' do
     describe '#increment!' do
-      it 'should increment' do
+      it 'increments' do
         time = Time.now
         Timecop.freeze time do
           expect(Pause.adapter).to receive(:increment).with(action.scope, identifier, time.to_i, 1)
@@ -40,7 +38,7 @@ describe Pause::Action do
     end
 
     describe '#ok?' do
-      it 'should successfully return if the action is blocked or not' do
+      it 'successfullies return if the action is blocked or not' do
         time = Time.now
         Timecop.freeze time do
           4.times do
@@ -52,7 +50,7 @@ describe Pause::Action do
         end
       end
 
-      it 'should successfully consider different period checks' do
+      it 'successfullies consider different period checks' do
         time = Time.parse('Sept 22, 11:34:00')
 
         Timecop.freeze time - 30 do
@@ -71,7 +69,7 @@ describe Pause::Action do
         end
       end
 
-      it 'should return false and silently fail if redis is not available' do
+      it 'returns false and silently fail if redis is not available' do
         allow(Pause::Logger).to receive(:fatal)
         allow_any_instance_of(Redis).to receive(:zrange).and_raise Redis::CannotConnectError
         time = period_marker(resolution, Time.now.to_i)
@@ -86,7 +84,7 @@ describe Pause::Action do
       context 'action should not be rate limited' do
         it 'returns nil' do
           expect(adapter.rate_limited?(action.scope, action.identifier)).to be false
-          expect(action.analyze).to be nil
+          expect(action.analyze).to be_nil
         end
       end
 
@@ -130,7 +128,7 @@ describe Pause::Action do
   end
 
   context 'actions under test' do
-    ['123456', 'hello', 0, 999999].each do |id|
+    ['123456', 'hello', 0, 999_999].each do |id|
       let(:identifier) { id }
       let(:action) { MyNotification.new(identifier) }
       describe "action with identifier #{id}" do
@@ -151,11 +149,12 @@ describe Pause::Action do
     let(:bogus) { Struct.new(:name, :event).new }
 
     describe '#unless_rate_limited' do
-      before { expect(bogus).to receive(:name).exactly(2).times }
+      before { expect(bogus).to receive(:name).twice }
 
       describe '#initialize' do
-        before { expect(bogus).to receive(:event).exactly(1).times }
-        it 'should be able to use methods inside the #new block' do
+        before { expect(bogus).to receive(:event).once }
+
+        it 'is able to use methods inside the #new block' do
           b = bogus
           CowRateLimited.new(identifier) do
             unless_rate_limited { b.name } # this executes
@@ -166,32 +165,31 @@ describe Pause::Action do
         end
       end
 
-
-      it 'should call through the block' do
+      it 'calls through the block' do
         action.unless_rate_limited { bogus.name }
         action.unless_rate_limited { bogus.name }
         result = action.unless_rate_limited { bogus.name }
-        expect(result).to be_a_kind_of(::Pause::RateLimitedEvent)
+        expect(result).to be_a(Pause::RateLimitedEvent)
       end
 
-      it 'should call through the block' do
+      it 'calls through the block' do
         3.times { action.unless_rate_limited { bogus.name } }
       end
 
       describe '#if_rate_limited' do
         before { 2.times { action.unless_rate_limited { bogus.name } } }
 
-        it 'it should not analyze during method call' do
+        it 'does not analyze during method call' do
           bogus.event = 1
           action.if_rate_limited { |event| bogus.event = event }
-          expect(bogus.event).to be_a_kind_of(::Pause::RateLimitedEvent)
+          expect(bogus.event).to be_a(Pause::RateLimitedEvent)
           expect(bogus.event.identifier).to eq(identifier)
         end
 
-        it 'should analyze if requested' do
+        it 'analyzes if requested' do
           action.unless_rate_limited { bogus.name }
           result = action.if_rate_limited { |event| bogus.event = event }
-          expect(bogus.event).to be_a_kind_of(::Pause::RateLimitedEvent)
+          expect(bogus.event).to be_a(Pause::RateLimitedEvent)
           expect(result).to eq(bogus.event)
         end
       end
@@ -199,7 +197,7 @@ describe Pause::Action do
   end
 
   describe '.tracked_identifiers' do
-    it 'should return all the identifiers tracked (but not blocked) so far' do
+    it 'returns all the identifiers tracked (but not blocked) so far' do
       action.increment!
       other_action.increment!
 
@@ -212,7 +210,7 @@ describe Pause::Action do
   end
 
   describe '.rate_limited_identifiers' do
-    it 'should return all the identifiers blocked' do
+    it 'returns all the identifiers blocked' do
       action.increment!(100, Time.now.to_i)
       other_action.increment!(100, Time.now.to_i)
 
@@ -225,7 +223,7 @@ describe Pause::Action do
   end
 
   describe '.unblock_all' do
-    it 'should unblock all the identifiers for a scope' do
+    it 'unblocks all the identifiers for a scope' do
       10.times { action.increment! }
       other_action.increment!
 
@@ -241,7 +239,6 @@ describe Pause::Action do
       expect(MyNotification.tracked_identifiers).to eq([other_action.identifier])
     end
   end
-
 end
 
 describe Pause::Action, '.check' do
@@ -259,22 +256,22 @@ describe Pause::Action, '.check' do
     check period_seconds: 50, block_ttl: 60, max_allowed: 100
   end
 
-  it 'should define a period check on new instances' do
+  it 'defines a period check on new instances' do
     expect(ActionWithCheck.new('id').checks).to eq([
                                                      Pause::PeriodCheck.new(100, 150, 200)
                                                    ])
   end
 
-  it 'should define a period check on new instances' do
+  it 'defines a period check on new instances' do
     expect(ActionWithMultipleChecks.new('id').checks).to \
       eq([
-                                                                    Pause::PeriodCheck.new(100, 150, 200),
-                                                                    Pause::PeriodCheck.new(200, 150, 200),
-                                                                    Pause::PeriodCheck.new(300, 150, 200)
-                                                                  ])
+           Pause::PeriodCheck.new(100, 150, 200),
+           Pause::PeriodCheck.new(200, 150, 200),
+           Pause::PeriodCheck.new(300, 150, 200)
+         ])
   end
 
-  it 'should accept hash arguments' do
+  it 'accepts hash arguments' do
     expect(ActionWithHashChecks.new('id').checks).to eq([
                                                           Pause::PeriodCheck.new(50, 100, 60)
                                                         ])
@@ -287,7 +284,7 @@ describe Pause::Action, '.scope' do
     end
   end
 
-  it 'should raise if scope is not defined' do
+  it 'raises if scope is not defined' do
     expect(MyApp::NoScope.new('1.2.3.4').scope).to eq 'myapp.noscope'
   end
 
@@ -295,7 +292,7 @@ describe Pause::Action, '.scope' do
     scope 'my:scope'
   end
 
-  it 'should set scope on class' do
+  it 'sets scope on class' do
     expect(DefinedScopeAction.new('1.2.3.4').scope).to eq('my:scope')
   end
 end
@@ -318,26 +315,26 @@ describe Pause::Action, 'enabled/disabled states' do
   describe '#disable' do
     before do
       expect(action).to be_enabled
-      expect(action).to_not be_disabled
+      expect(action).not_to be_disabled
       action.disable
     end
 
     it 'disables the action' do
       expect(action).to be_disabled
-      expect(action).to_not be_enabled
+      expect(action).not_to be_enabled
     end
   end
 
   describe '#enable' do
     before do
       action.disable
-      expect(action).to_not be_enabled
+      expect(action).not_to be_enabled
       action.enable
     end
 
     it 'enables the action' do
       expect(action).to be_enabled
-      expect(action).to_not be_disabled
+      expect(action).not_to be_disabled
     end
   end
 end

@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 module Pause
   class Action
     attr_accessor :identifier
 
     def initialize(identifier, &block)
-      @identifier       = identifier
+      @identifier = identifier
       self.class.checks ||= []
       instance_exec(&block) if block
     end
@@ -23,9 +25,8 @@ module Pause
           #       scope "my:scope"
           #     end
           #
-          @scope = klass.name.downcase.gsub(/::/, '.')
+          @scope = klass.name.downcase.gsub('::', '.')
           class << self
-
             # @param [String] args
             def scope(*args)
               @scope = args.first if args && args.size == 1
@@ -157,6 +158,5 @@ module Pause
     def adapter
       self.class.adapter
     end
-
   end
 end

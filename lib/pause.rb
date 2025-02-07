@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'redis'
 require 'colored2'
 require 'pause/version'
@@ -10,15 +12,15 @@ require 'pause/redis/sharded_adapter'
 require 'pause/rate_limited_event'
 
 module Pause
-  class PeriodCheck < Struct.new(:period_seconds, :max_allowed, :block_ttl)
+  PeriodCheck = Struct.new(:period_seconds, :max_allowed, :block_ttl) do
     def <=>(other)
-      self.period_seconds <=> other.period_seconds
+      period_seconds <=> other.period_seconds
     end
   end
 
-  class SetElement < Struct.new(:ts, :count)
+  SetElement = Struct.new(:ts, :count) do
     def <=>(other)
-      self.ts <=> other.ts
+      ts <=> other.ts
     end
   end
 
@@ -28,17 +30,17 @@ module Pause
     end
 
     def adapter
-      @adapter ||= config.sharded ?
-        Pause::Redis::ShardedAdapter.new(config) :
-        Pause::Redis::Adapter.new(config)
+      @adapter ||= if config.sharded
+                     Pause::Redis::ShardedAdapter.new(config)
+                   else
+                     Pause::Redis::Adapter.new(config)
+                   end
     end
 
-    def adapter=(adapter)
-      @adapter = adapter
-    end
+    attr_writer :adapter
 
     def configure(&block)
-      @configuration ||= Pause::Configuration.new.configure(&block)
+      @configure ||= Pause::Configuration.new.configure(&block)
     end
 
     def config(&block)

@@ -1,19 +1,20 @@
+# frozen_string_literal: true
+
 require 'pause/helper/timing'
 
 module Pause
   module Redis
-
     # This class encapsulates Redis operations used by Pause
     class Adapter
       class << self
         def redis
-          @redis_conn ||= ::Redis.new(redis_connection_opts)
+          @redis ||= ::Redis.new(redis_connection_opts)
         end
 
         def redis_connection_opts
           { host: Pause.config.redis_host,
             port: Pause.config.redis_port,
-            db:   Pause.config.redis_db }
+            db: Pause.config.redis_db }
         end
       end
 
@@ -72,6 +73,7 @@ module Pause
       # @return count [Integer] the number of items deleted
       def delete_rate_limited_keys(scope)
         return 0 unless rate_limited_keys(scope).any?
+
         delete_tracking_keys(scope, rate_limited_keys(scope))
         redis.zremrangebyscore(rate_limited_list(scope), '-inf', '+inf').tap do |_count|
           redis.del rate_limited_list(scope)
@@ -84,7 +86,7 @@ module Pause
       end
 
       def disable(scope)
-        redis.set("internal:|#{scope}|:disabled", "1")
+        redis.set("internal:|#{scope}|:disabled", '1')
       end
 
       def enable(scope)
@@ -110,11 +112,11 @@ module Pause
       end
 
       def truncate_set_for(k)
-        if redis.zcard(k) > time_blocks_to_keep
-          list      = extract_set_elements(k)
-          to_remove = list.slice(0, (list.size - time_blocks_to_keep)).map(&:ts)
-          redis.zrem(k, to_remove) if k && to_remove && to_remove.size > 0
-        end
+        return unless redis.zcard(k) > time_blocks_to_keep
+
+        list      = extract_set_elements(k)
+        to_remove = list.slice(0, (list.size - time_blocks_to_keep)).map(&:ts)
+        redis.zrem(k, to_remove) if k && to_remove&.size&.positive?
       end
 
       def delete_tracking_keys(scope, ids)
@@ -137,7 +139,7 @@ module Pause
 
       def keys(key_scope)
         redis.keys("#{key_scope}:*").map do |key|
-          key.gsub(/^#{key_scope}:/, "").tr('|', '')
+          key.gsub(/^#{key_scope}:/, '').tr('|', '')
         end
       end
 

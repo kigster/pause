@@ -1,11 +1,18 @@
-module Pause
-  class Logger
-    def self.puts(message)
-      STDOUT.puts message
-    end
+# frozen_string_literal: true
 
-    def self.fatal(message)
-      STDERR.puts message.red
+module Pause
+  # @description Logger class for Pause
+  class Logger
+    class << self
+      def puts(message)
+        $stdout.puts message
+      end
+
+      def fatal(message)
+        # rubocop: disable Style/StderrPuts
+        $stderr.puts message.red
+        # rubocop: enable Style/StderrPuts
+      end
     end
   end
 end

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Pause
   module Redis
     class OperationNotSupported < StandardError
@@ -7,7 +9,6 @@ module Pause
     # Operations that are not possible when data is sharded
     # raise an error.
     class ShardedAdapter < Adapter
-
       # Overrides real multi which is not possible when sharded.
       def with_multi
         yield(redis) if block_given?
@@ -23,7 +24,7 @@ module Pause
       private
 
       def keys(_key_scope)
-        raise OperationNotSupported.new('Can not be executed when Pause is configured in sharded mode')
+        raise OperationNotSupported, 'Can not be executed when Pause is configured in sharded mode'
       end
     end
   end

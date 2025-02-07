@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'spec_helper'
 require 'timecop'
 
@@ -11,19 +13,16 @@ describe Pause::Analyzer do
   end
 
   let(:resolution) { 10 }
+  let(:analyzer) { Pause.analyzer }
+  let(:action) { FollowPushNotification.new('1243123') }
   let(:history) { 60 }
   let(:configuration) { Pause::Configuration.new }
   let(:adapter) { Pause::Redis::Adapter.new(configuration) }
 
   before do
-    allow(Pause).to receive(:config).and_return(configuration)
-    allow(Pause.config).to receive(:resolution).and_return(resolution)
-    allow(Pause.config).to receive(:history).and_return(history)
-    allow(Pause).to receive(:adapter).and_return(adapter)
+    allow(Pause.config).to receive_messages(resolution: resolution, history: history)
+    allow(Pause).to receive_messages(config: configuration, adapter: adapter)
   end
-
-  let(:analyzer) { Pause.analyzer }
-  let(:action) { FollowPushNotification.new('1243123') }
 
   describe '#analyze' do
     it 'checks and blocks if max_allowed is reached' do
@@ -39,11 +38,11 @@ describe Pause::Analyzer do
   end
 
   describe '#check' do
-    it 'should return nil if action is NOT blocked' do
-      expect(analyzer.check(action)).to be nil
+    it 'returns nil if action is NOT blocked' do
+      expect(analyzer.check(action)).to be_nil
     end
 
-    it 'should return blocked action if action is blocked' do
+    it 'returns blocked action if action is blocked' do
       Timecop.freeze Time.now do
         5.times do
           action.increment!

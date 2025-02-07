@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Pause
   class RateLimitedEvent
     attr_accessor :action, :identifier, :period_check, :sum, :timestamp
@@ -9,6 +11,5 @@ module Pause
       @sum = sum
       @timestamp = timestamp
     end
-
   end
 end
