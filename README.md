@@ -7,11 +7,11 @@
 [![Downloads](https://img.shields.io/gem/dt/pause.svg?style=for-the-badge&color=0AF)](https://rubygems.org/gems/pause)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&color=0AF)](https://opensource.org/licenses/MIT)
 
-# Pause
+# Pause — A Redis-backed Rate Limiter
 
-## In a Nutshell
+## Overview
 
-**Pause** is a fast and very flexible Redis-backed rate-limiter. You can use it to track events, with
+**Pause** is a fast and very flexible Redis-backed rate-limiter, written originally at [Wanelo.com](https://www.crunchbase.com/organization/wanelo). You can use it to track events, with
 rules around how often they are allowed to occur within configured time checks.
 
 Sample applications include:
@@ -215,7 +215,7 @@ class FollowsController < ApplicationController
     end
   end
 end
-
+~~~~~~~~
 class OtherController < ApplicationController
   def index
     action = OtherAction.new(params[:thing])d
@@ -327,13 +327,13 @@ The action block list is implemented as a sorted set, so it should still be usab
 
 ## Testing
 
-By default, `fakeredis` gem is used to emulate Redis in development. However, the same test-suite should be able to run against a real redis — however, be aware that it will flush the current db during spec run. In order to run specs against real redis, make sure you have Redis running locally on the default port, and that you are able to connect to it using `redis-cli`.
+By default, `fakeredis` gem is used to emulate Redis in development. 
 
-Please note that Travis suite, as well as the default rake task, run both.
+However, the same test-suite runs against a real redis, just be aware that using real redis server running locally on 127.0.0.1 will result in a `flush` operation on the current redis db during the spec run. In order to run specs against real redis, please make sure you have Redis running locally on the default port (6379), and that you are able to connect to it using `redis-cli -p 6379 -h 127.0.0.1`.
 
-### Unit Testing with Fakeredis
+### Unit Testing with FakeRedis
 
-Fakeredis is the default, and is also run whenever `bundle exec rspec` is executed, or `rake spec` task invoked.
+The gem `fakeredis` is the default for testing, and is also run whenever `bundle exec rspec` is executed, or `rake spec` task invoked.
 
 ```bash
 bundle exec rake spec:unit
@@ -344,6 +344,16 @@ bundle exec rake spec:unit
 ```bash
 bundle exec rake spec:integration
 ```
+
+OR
+
+```bash
+PAUSE_REAL_REDIS=1 bundle exec rspec
+```
+
+### Test Coverage
+
+At the time of this writing the gem has 100% test coverage. Please keep it that way ;)
 
 ## Contributing
 
@@ -357,9 +367,15 @@ Want to make it better? Cool. Here's how:
 
 ## Authors
 
- * This gem was written by Eric Saxby, Atasay Gokkaya and Konstantin Gredeskoul at Wanelo, Inc.
- * It's been updated and refreshed by Konstantin Gredeskoul.
+ * This gem was donated to Open Source by [Wanelo, Inc](https://www.crunchbase.com/organization/wanelo)
 
+ * The original authors are:
+   * [Atasay Gökkaya](https://github.com/atasay)
+   * [Konstantin Gredeskoul](https://github.com/kigster)
+   * [Eric Saxby](https://github.com/sax)
+   * Paul Henry
+ 
+ * The gem is currently maintained and kept up to date by [Konstantin Gredeskoul](https://kig.re/)
 
 Please see the [LICENSE.txt](LICENSE.txt) file for further details.
 

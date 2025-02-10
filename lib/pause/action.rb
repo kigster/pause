@@ -117,7 +117,7 @@ module Pause
       end
     end
 
-    def if_rate_limited(&_block)
+    def if_rate_limited(&)
       check_result = analyze(recalculate: true)
       yield(check_result) unless check_result.nil?
     end

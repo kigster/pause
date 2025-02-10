@@ -17,6 +17,7 @@ inherit_from: .rubocop_todo.yml
 #
 AllCops:
   NewCops: enable
+  TargetRubyVersion: 3.2
 
 RSpec/MultipleMemoizedHelpers:
   Enabled: false
@@ -25,4 +26,10 @@ RSpec/ExampleLength:
   Enabled: false
 
 RSpec/MultipleExpectations:
+  Enabled: false
+
+RSpec/IndexedLet:
+  Enabled: false
+
+Naming/VariableNumber:
   Enabled: false
