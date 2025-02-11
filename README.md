@@ -139,12 +139,17 @@ Or install it yourself as:
 
 ### Configuration
 
-Configure Pause. This could be in a Rails initializer.
+Configure Pause. This could be in a Rails initializer. At the moment, pause can only be used as a singleton, i.e. you can not use `pause` with multiple configurations, or multiple redis backends. This is something that can be rather easily fixed, if necessary.
 
-  * resolution - The time resolution (in seconds) defining the minimum period into which action counts are
+Therefore, you configure the Pause singleton with the following options: 
+ 
+  * **redis connection parameters** - The host, port and db of the Redis instance to use.
+
+  * **resolution** - the length of time (in seconds) defining the minimum period into which action counts are
                  aggregated. This defines the size of the persistent store. The higher the number, the less data needs
                  to be persisted in Redis.
-  * history - The maximum amount of time (in seconds) that data is persisted
+
+  * **history** - The maximum amount of time (in seconds) that data is persisted.
 
 ```ruby
 Pause.configure do |config|
@@ -156,12 +161,10 @@ Pause.configure do |config|
 end
 ```
 
+
 ### Actions
 
-Define local actions for your application. Actions define a scope by
-which they are identified in the persistent store (aka "namespace"), and a set of checks.  Checks define various
-thresholds (`max_allowed`) against periods of time (`period_seconds`). When a threshold it triggered,
-the action is rate limited, and stays rate limited for the duration of `block_ttl` seconds.
+Define local actions for your application. Actions define a scope by which they are identified in the persistent store (aka "namespace"), and a set of checks.  Checks define various thresholds (`max_allowed`) against periods of time (`period_seconds`). When a threshold it triggered, the action is rate limited, and stays rate limited for the duration of `block_ttl` seconds.
 
 #### Checks
 
@@ -205,6 +208,7 @@ When an event occurs, you increment an instance of your action, optionally with 
 In the example at the top of the README you saw how we used `#unless_rate_limited` and `#if_rate_limited` methods. These are the recommended API methods, but if you must get a finer-grained control over the actions, you can also use methods such as `#ok?`, `#rate_limited?`, `#increment!` to do manually what the block methods do already. Below is an example of this "manual" implementation:
 
 ```ruby
+# app/controllers/follows_controller.rb
 class FollowsController < ApplicationController
   def create
     action = FollowAction.new(user.id)
@@ -215,7 +219,8 @@ class FollowsController < ApplicationController
     end
   end
 end
-~~~~~~~~
+
+# app/controlers/other_controller.rb
 class OtherController < ApplicationController
   def index
     action = OtherAction.new(params[:thing])d
@@ -237,11 +242,16 @@ while true
   action.increment!
 
   rate_limit_event = action.analyze
-  if rate_limit_event
-    puts rate_limit_event.identifier               # which key got rate limited ("thing")
-    puts rate_limit_event.sum                      # total count that triggered a rate limit
-    puts rate_limit_event.timestamp                # timestamp when rate limiting occurred
-    puts rate_limit_event.period_check             # period check object, that triggered this rate limiting event
+  
+  if rate_limit_event    # or action.ok?
+    # which key got rate limited ("thing")
+    rate_limit_event.identifier
+    # total count that triggered a rate limit
+    rate_limit_event.sum
+    # timestamp when rate limiting occurred
+    rate_limit_event.timestamp
+    # period check object, that triggered this rate limiting event
+    rate_limit_event.period_check
   else
     # not rate-limited, same as action.ok?
   end
