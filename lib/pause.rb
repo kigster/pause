@@ -13,6 +13,14 @@ require 'pause/rate_limited_event'
 
 module Pause
   PeriodCheck = Struct.new(:period_seconds, :max_allowed, :block_ttl) do
+    def initialize(*args, period_seconds: nil, max_allowed: nil, block_ttl: nil)
+      if args.any?
+        super(*args)
+      else
+        super(period_seconds, max_allowed, block_ttl)
+      end
+    end
+
     def <=>(other)
       period_seconds <=> other.period_seconds
     end
@@ -39,12 +47,12 @@ module Pause
 
     attr_writer :adapter
 
-    def configure(&block)
-      @configure ||= Pause::Configuration.new.configure(&block)
+    def configure(&)
+      @configure ||= Pause::Configuration.new.configure(&)
     end
 
-    def config(&block)
-      configure(&block)
+    def config(&)
+      configure(&)
     end
   end
 end

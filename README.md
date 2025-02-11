@@ -7,11 +7,11 @@
 [![Downloads](https://img.shields.io/gem/dt/pause.svg?style=for-the-badge&color=0AF)](https://rubygems.org/gems/pause)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge&color=0AF)](https://opensource.org/licenses/MIT)
 
-# Pause
+# Pause — A Redis-backed Rate Limiter
 
-## In a Nutshell
+## Overview
 
-**Pause** is a fast and very flexible Redis-backed rate-limiter. You can use it to track events, with
+**Pause** is a fast and very flexible Redis-backed rate-limiter, written originally at [Wanelo.com](https://www.crunchbase.com/organization/wanelo). You can use it to track events, with
 rules around how often they are allowed to occur within configured time checks.
 
 Sample applications include:
@@ -139,12 +139,17 @@ Or install it yourself as:
 
 ### Configuration
 
-Configure Pause. This could be in a Rails initializer.
+Configure Pause. This could be in a Rails initializer. At the moment, pause can only be used as a singleton, i.e. you can not use `pause` with multiple configurations, or multiple redis backends. This is something that can be rather easily fixed, if necessary.
 
-  * resolution - The time resolution (in seconds) defining the minimum period into which action counts are
+Therefore, you configure the Pause singleton with the following options: 
+ 
+  * **redis connection parameters** - The host, port and db of the Redis instance to use.
+
+  * **resolution** - the length of time (in seconds) defining the minimum period into which action counts are
                  aggregated. This defines the size of the persistent store. The higher the number, the less data needs
                  to be persisted in Redis.
-  * history - The maximum amount of time (in seconds) that data is persisted
+
+  * **history** - The maximum amount of time (in seconds) that data is persisted.
 
 ```ruby
 Pause.configure do |config|
@@ -156,12 +161,10 @@ Pause.configure do |config|
 end
 ```
 
+
 ### Actions
 
-Define local actions for your application. Actions define a scope by
-which they are identified in the persistent store (aka "namespace"), and a set of checks.  Checks define various
-thresholds (`max_allowed`) against periods of time (`period_seconds`). When a threshold it triggered,
-the action is rate limited, and stays rate limited for the duration of `block_ttl` seconds.
+Define local actions for your application. Actions define a scope by which they are identified in the persistent store (aka "namespace"), and a set of checks.  Checks define various thresholds (`max_allowed`) against periods of time (`period_seconds`). When a threshold it triggered, the action is rate limited, and stays rate limited for the duration of `block_ttl` seconds.
 
 #### Checks
 
@@ -205,6 +208,7 @@ When an event occurs, you increment an instance of your action, optionally with 
 In the example at the top of the README you saw how we used `#unless_rate_limited` and `#if_rate_limited` methods. These are the recommended API methods, but if you must get a finer-grained control over the actions, you can also use methods such as `#ok?`, `#rate_limited?`, `#increment!` to do manually what the block methods do already. Below is an example of this "manual" implementation:
 
 ```ruby
+# app/controllers/follows_controller.rb
 class FollowsController < ApplicationController
   def create
     action = FollowAction.new(user.id)
@@ -216,6 +220,7 @@ class FollowsController < ApplicationController
   end
 end
 
+# app/controlers/other_controller.rb
 class OtherController < ApplicationController
   def index
     action = OtherAction.new(params[:thing])d
@@ -237,11 +242,16 @@ while true
   action.increment!
 
   rate_limit_event = action.analyze
-  if rate_limit_event
-    puts rate_limit_event.identifier               # which key got rate limited ("thing")
-    puts rate_limit_event.sum                      # total count that triggered a rate limit
-    puts rate_limit_event.timestamp                # timestamp when rate limiting occurred
-    puts rate_limit_event.period_check             # period check object, that triggered this rate limiting event
+  
+  if rate_limit_event    # or action.ok?
+    # which key got rate limited ("thing")
+    rate_limit_event.identifier
+    # total count that triggered a rate limit
+    rate_limit_event.sum
+    # timestamp when rate limiting occurred
+    rate_limit_event.timestamp
+    # period check object, that triggered this rate limiting event
+    rate_limit_event.period_check
   else
     # not rate-limited, same as action.ok?
   end
@@ -327,13 +337,13 @@ The action block list is implemented as a sorted set, so it should still be usab
 
 ## Testing
 
-By default, `fakeredis` gem is used to emulate Redis in development. However, the same test-suite should be able to run against a real redis — however, be aware that it will flush the current db during spec run. In order to run specs against real redis, make sure you have Redis running locally on the default port, and that you are able to connect to it using `redis-cli`.
+By default, `fakeredis` gem is used to emulate Redis in development. 
 
-Please note that Travis suite, as well as the default rake task, run both.
+However, the same test-suite runs against a real redis, just be aware that using real redis server running locally on 127.0.0.1 will result in a `flush` operation on the current redis db during the spec run. In order to run specs against real redis, please make sure you have Redis running locally on the default port (6379), and that you are able to connect to it using `redis-cli -p 6379 -h 127.0.0.1`.
 
-### Unit Testing with Fakeredis
+### Unit Testing with FakeRedis
 
-Fakeredis is the default, and is also run whenever `bundle exec rspec` is executed, or `rake spec` task invoked.
+The gem `fakeredis` is the default for testing, and is also run whenever `bundle exec rspec` is executed, or `rake spec` task invoked.
 
 ```bash
 bundle exec rake spec:unit
@@ -344,6 +354,16 @@ bundle exec rake spec:unit
 ```bash
 bundle exec rake spec:integration
 ```
+
+OR
+
+```bash
+PAUSE_REAL_REDIS=1 bundle exec rspec
+```
+
+### Test Coverage
+
+At the time of this writing the gem has 100% test coverage. Please keep it that way ;)
 
 ## Contributing
 
@@ -357,9 +377,15 @@ Want to make it better? Cool. Here's how:
 
 ## Authors
 
- * This gem was written by Eric Saxby, Atasay Gokkaya and Konstantin Gredeskoul at Wanelo, Inc.
- * It's been updated and refreshed by Konstantin Gredeskoul.
+ * This gem was donated to Open Source by [Wanelo, Inc](https://www.crunchbase.com/organization/wanelo)
 
+ * The original authors are:
+   * [Atasay Gökkaya](https://github.com/atasay)
+   * [Konstantin Gredeskoul](https://github.com/kigster)
+   * [Eric Saxby](https://github.com/sax)
+   * Paul Henry
+ 
+ * The gem is currently maintained and kept up to date by [Konstantin Gredeskoul](https://kig.re/)
 
 Please see the [LICENSE.txt](LICENSE.txt) file for further details.
 

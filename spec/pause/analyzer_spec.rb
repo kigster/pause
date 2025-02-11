@@ -42,6 +42,10 @@ describe Pause::Analyzer do
       expect(analyzer.check(action)).to be_nil
     end
 
+    it 'returns nil if action is NOT rate limited' do
+      expect(action).not_to be_rate_limited
+    end
+
     it 'returns blocked action if action is blocked' do
       Timecop.freeze Time.now do
         5.times do
